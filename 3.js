@@ -7,8 +7,9 @@ function patch (oldVNode, vnode, parentElm) {
         if (sameVnode(oldVNode, vnode)) {
             patchVnode(oldVNode, vnode);
         } else {
-            addVnodes(vnode.elm, vnode);
-            removeVnodes(oldVNode);
+            removeVnodes(parentElm, oldVnode, 0, oldVnode.length - 1);
+            addVnodes(parentElm, vnode, 0, vnode.length - 1);
         }
     }
 }
+
