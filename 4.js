@@ -1,6 +1,4 @@
-/* 匹配头 */
 const ncname = '[a-zA-Z_][\\w\\-\\.]*';
-
 const singleAttrIdentifier = /([^\s"'<>/=]+)/
 const singleAttrAssign = /(?:=)/
 const singleAttrValues = [
@@ -23,6 +21,8 @@ const startTagClose = /^\s*(\/?)>/
 
 const endTag = new RegExp('^<\\/' + qnameCapture + '[^>]*>')
 
+const defaultTagRE = /\{\{((?:.|\n)+?)\}\}/g
+
 const stack = [];
 let currentParent, root;
 
@@ -34,6 +34,8 @@ function advance (n) {
 function makeAttrsMap (attrs) {
     const map = {}
     for (let i = 0, l = attrs.length; i < l; i++) {
+        console.log('******')
+        console.log(attrs[i])
         map[attrs[i].name] = attrs[i].value;
     }
     return map
@@ -53,8 +55,8 @@ function parseStartTag () {
         while (!(end = html.match(startTagClose)) && (attr = html.match(attribute))) {
             advance(attr[0].length)
             match.attrs.push({
-                tag: attr[1],
-                val: attr[3]
+                name: attr[1],
+                value: attr[3]
             });
         }
         if (end) {
@@ -80,6 +82,50 @@ function parseEndTag (tagName) {
     }   
 }
 
+function parseText (text) {
+    if (!defaultTagRE.test(text)) return;
+
+    const tokens = [];
+    let lastIndex = defaultTagRE.lastIndex = 0
+    let match, index
+    while ((match = defaultTagRE.exec(text))) {
+        index = match.index
+        // push text token
+        if (index > lastIndex) {
+        tokens.push(JSON.stringify(text.slice(lastIndex, index)))
+        }
+        // tag token
+        const exp = match[1].trim()
+        tokens.push(`_s(${exp})`)
+        lastIndex = index + match[0].length
+    }
+
+    if (lastIndex < text.length) {
+        tokens.push(JSON.stringify(text.slice(lastIndex)))
+    }
+    return tokens.join('+');
+}
+
+function getAndRemoveAttr (el, name) {
+    let val
+    if ((val = el.attrsMap[name]) != null) {
+        const list = el.attrsList
+        for (let i = 0, l = list.length; i < l; i++) {
+            if (list[i].name === name) {
+                list.splice(i, 1)
+                break
+            }   
+        }
+    }
+    return val
+}
+
+function processIf (el) {
+    console.log('processIf', el);
+    const exp = getAndRemoveAttr(el, 'v-if');
+    console.log(exp);
+}
+
 function parseHTML () {
     while(html) {
         let textEnd = html.indexOf('<');
@@ -101,6 +147,8 @@ function parseHTML () {
                     children: []
                 }
 
+                processIf(element);
+
                 if(!root){
                     root = element
                 }
@@ -115,11 +163,25 @@ function parseHTML () {
             }
         } else {
             text = html.substring(0, textEnd)
-            console.log(text);
             advance(textEnd)
+            let expression;
+            if (expression = parseText(text)) {
+                currentParent.children.push({
+                    type: 2,
+                    text,
+                    expression
+                });
+            } else {
+                currentParent.children.push({
+                    type: 3,
+                    text,
+                });
+            }
+            //console.log(currentParent);
         }
     }
-    //console.log(root);
+    console.log('----------');
+    console.log('root', root);
 }
 //
 var html = '<div :class="c" class="demo" v-if="isShow"><span v-for="item in sz">{{item}}</span></div>';
