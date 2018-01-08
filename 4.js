@@ -2,11 +2,8 @@ const ncname = '[a-zA-Z_][\\w\\-\\.]*';
 const singleAttrIdentifier = /([^\s"'<>/=]+)/
 const singleAttrAssign = /(?:=)/
 const singleAttrValues = [
-  // attr value double quotes
   /"([^"]*)"+/.source,
-  // attr value, single quotes
   /'([^']*)'+/.source,
-  // attr value, no quotes
   /([^\s"'=<>`]+)/.source
 ]
 const attribute = new RegExp(
@@ -23,6 +20,8 @@ const endTag = new RegExp('^<\\/' + qnameCapture + '[^>]*>')
 
 const defaultTagRE = /\{\{((?:.|\n)+?)\}\}/g
 
+const forAliasRE = /(.*?)\s+(?:in|of)\s+(.*)/
+
 const stack = [];
 let currentParent, root;
 
@@ -34,8 +33,6 @@ function advance (n) {
 function makeAttrsMap (attrs) {
     const map = {}
     for (let i = 0, l = attrs.length; i < l; i++) {
-        console.log('******')
-        console.log(attrs[i])
         map[attrs[i].name] = attrs[i].value;
     }
     return map
@@ -90,11 +87,11 @@ function parseText (text) {
     let match, index
     while ((match = defaultTagRE.exec(text))) {
         index = match.index
-        // push text token
+
         if (index > lastIndex) {
         tokens.push(JSON.stringify(text.slice(lastIndex, index)))
         }
-        // tag token
+        
         const exp = match[1].trim()
         tokens.push(`_s(${exp})`)
         lastIndex = index + match[0].length
@@ -120,10 +117,27 @@ function getAndRemoveAttr (el, name) {
     return val
 }
 
+function processFor (el) {
+    let exp;
+    if ((exp = getAndRemoveAttr(el, 'v-for'))) {
+        const inMatch = exp.match(forAliasRE);
+        el.for = inMatch[2].trim();
+        el.alias = inMatch[1].trim();
+    }
+}
+
 function processIf (el) {
-    console.log('processIf', el);
     const exp = getAndRemoveAttr(el, 'v-if');
-    console.log(exp);
+    if (exp) {
+        el.if = exp;
+        if (!el.ifConditions) {
+            el.ifConditions = [];
+        }
+        el.ifConditions.push({
+            exp: exp,
+            block: el
+        });
+    }
 }
 
 function parseHTML () {
@@ -148,6 +162,7 @@ function parseHTML () {
                 }
 
                 processIf(element);
+                processFor(element);
 
                 if(!root){
                     root = element
@@ -177,7 +192,7 @@ function parseHTML () {
                     text,
                 });
             }
-            //console.log(currentParent);
+            continue;
         }
     }
     console.log('----------');
