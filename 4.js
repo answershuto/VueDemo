@@ -25,6 +25,8 @@ const forAliasRE = /(.*?)\s+(?:in|of)\s+(.*)/
 const stack = [];
 let currentParent, root;
 
+let index = 0;
+
 function advance (n) {
     index += n
     html = html.substring(n)
@@ -195,11 +197,30 @@ function parseHTML () {
             continue;
         }
     }
-    console.log('----------');
     console.log('root', root);
+    console.log('----------');
+    return root;
+}
+
+function parse () {
+    return parseHTML();
+}
+
+function optimize (rootAst) {
+    function isStatic () {
+        if (node.type === 2) {
+            return false
+        }
+        if (node.type === 3) {
+            return true
+        }
+    }
+    function markStatic () {
+        
+    }
 }
 //
 var html = '<div :class="c" class="demo" v-if="isShow"><span v-for="item in sz">{{item}}</span></div>';
-var index = 0;
 
-parseHTML();
+const ast = parse();
+optimize(ast);
