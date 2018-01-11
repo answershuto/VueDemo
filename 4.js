@@ -197,8 +197,6 @@ function parseHTML () {
             continue;
         }
     }
-    console.log('root', root);
-    console.log('----------');
     return root;
 }
 
@@ -207,20 +205,108 @@ function parse () {
 }
 
 function optimize (rootAst) {
-    function isStatic () {
+    function isStatic (node) {
         if (node.type === 2) {
             return false
         }
         if (node.type === 3) {
             return true
         }
+        return (!node.if && !node.for);
     }
-    function markStatic () {
-        
+    function markStatic (node) {
+        node.static = isStatic(node);
+        if (node.type === 1) {
+            for (let i = 0, l = node.children.length; i < l; i++) {
+                const child = node.children[i];
+                markStatic(child);
+                if (!child.static) {
+                    node.static = false;
+                }
+            }
+        }
+    }
+
+    function markStaticRoots (node, isInFor) {
+        if (node.type === 1) {
+            if (node.static && node.children.length && !(
+            node.children.length === 1 &&
+            node.children[0].type === 3
+            )) {
+                node.staticRoot = true;
+                return;
+            } else {
+                node.staticRoot = false;
+            }
+        }
+    }
+
+    markStatic(rootAst);
+    markStaticRoots(rootAst, false);
+}
+
+function generate (rootAst) {
+
+    function genIf (el) {
+        el.ifProcessed = true;
+        if (!el.ifConditions.length) {
+            return '_e()';
+        }
+        return `(${el.ifConditions[0].exp})?${genElement(el.ifConditions[0].block)}: _e()`
+    }
+
+    function genFor (el) {
+        el.forProcessed = true;
+
+        const exp = el.for;
+        const alias = el.alias;
+        const iterator1 = el.iterator1 ? `,${el.iterator1}` : '';
+        const iterator2 = el.iterator2 ? `,${el.iterator2}` : '';
+
+        return `_l((${exp}),` +
+            `function(${alias}${iterator1}${iterator2}){` +
+            `return ${genElement(el)}` +
+        '})'
+    }
+
+    function genChildren (el) {
+        const children = el.children;
+
+        children && genElement(children[0]);
+
+        return
+    }
+
+    function genElement (el) {
+        if (el.if && !el.ifProcessed) {
+            return genIf(el);
+        } else if (el.for && !el.forProcessed) {
+            return genFor(el);
+        } else {
+            const children = genChildren(el);
+            let code;
+            code = `_c('${el.tag},'{
+                staticClass: ${el.attrsMap && el.attrsMap[':class']},
+                class: ${el.attrsMap && el.attrsMap['class']},
+            }${
+            children ? `,${children}` : ''
+            })`
+            return code;
+        }
+    }
+
+    const code = rootAst ? genElement(rootAst) : '_c("div")'
+    return {
+        render: `with(this){return ${code}}`,
     }
 }
+
 //
 var html = '<div :class="c" class="demo" v-if="isShow"><span v-for="item in sz">{{item}}</span></div>';
 
 const ast = parse();
 optimize(ast);
+console.log('ast', ast);
+console.log('---------')
+const code = generate(ast);
+console.log('render', code.render);
