@@ -266,15 +266,27 @@ function generate (rootAst) {
         return `_l((${exp}),` +
             `function(${alias}${iterator1}${iterator2}){` +
             `return ${genElement(el)}` +
-        '})'
+        '})';
+    }
+
+    function genText (el) {
+        return `_v(${el.expression})`;
+    }
+
+    function genNode (el) {
+        if (el.type === 1) {
+            return genElement(el);
+        } else {
+            return genText(el);
+        }
     }
 
     function genChildren (el) {
         const children = el.children;
 
-        children && genElement(children[0]);
-
-        return
+        if (children && children.length > 0) {
+            return `${children.map(genNode).join(',')}`;
+        }
     }
 
     function genElement (el) {
@@ -289,7 +301,7 @@ function generate (rootAst) {
                 staticClass: ${el.attrsMap && el.attrsMap[':class']},
                 class: ${el.attrsMap && el.attrsMap['class']},
             }${
-            children ? `,${children}` : ''
+                children ? `,${children}` : ''
             })`
             return code;
         }
@@ -306,7 +318,4 @@ var html = '<div :class="c" class="demo" v-if="isShow"><span v-for="item in sz">
 
 const ast = parse();
 optimize(ast);
-console.log('ast', ast);
-console.log('---------')
 const code = generate(ast);
-console.log('render', code.render);
