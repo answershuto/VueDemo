@@ -227,7 +227,7 @@ function optimize (rootAst) {
         }
     }
 
-    function markStaticRoots (node, isInFor) {
+    function markStaticRoots (node) {
         if (node.type === 1) {
             if (node.static && node.children.length && !(
             node.children.length === 1 &&
@@ -242,7 +242,7 @@ function optimize (rootAst) {
     }
 
     markStatic(rootAst);
-    markStaticRoots(rootAst, false);
+    markStaticRoots(rootAst);
 }
 
 function generate (rootAst) {
