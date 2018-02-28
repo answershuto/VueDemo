@@ -26,4 +26,6 @@ function cloneVNode (node) {
         node.text,
         node.elm
     );
+    
+    return cloneVnode;
 }
