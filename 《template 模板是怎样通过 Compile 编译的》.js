@@ -157,6 +157,7 @@ function parseHTML () {
                 const element = {
                     type: 1,
                     tag: startTagMatch.tagName,
+                    lowerCasedTag: startTagMatch.tagName.toLowerCase(),
                     attrsList: startTagMatch.attrs,
                     attrsMap: makeAttrsMap(startTagMatch.attrs),
                     parent: currentParent,
