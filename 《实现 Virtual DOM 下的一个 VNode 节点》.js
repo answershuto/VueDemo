@@ -8,7 +8,7 @@ class VNode {
     }
 }
 
-createEmptyVNode () {
+function createEmptyVNode () {
     const node = new VNode();
     node.text = '';
     return node;
