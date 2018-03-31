@@ -76,8 +76,12 @@ function parseEndTag (tagName) {
     }
 
     if (pos >= 0) {
+        if (pos > 0) {
+            currentParent = stack[pos - 1];
+        } else {
+            currentParent = null;
+        }
         stack.length = pos;
-        currentParent = stack[pos]; 
     }   
 }
 
