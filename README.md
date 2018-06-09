@@ -2,6 +2,8 @@
 
 掘金小册[《剖析 Vue.js 内部运行机制》](https://juejin.im/book/5a36661851882538e2259c0f)配套Demo。
 
+![](https://i.loli.net/2018/04/01/5ac0836626d86.jpg)
+
 如对内容有任何疑问，请提[issue](https://github.com/answershuto/VueDemo/issues)或者直接联系我[染陌](https://github.com/answershuto)。
 
 ## 关于作者
