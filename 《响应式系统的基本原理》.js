@@ -21,6 +21,7 @@ function defineReactive (obj, key, val) {
         },
         set: function reactiveSetter (newVal) {
             if (newVal === val) return;
+            val = newVal;
             cb(newVal);
         }
     });
