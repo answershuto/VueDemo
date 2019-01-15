@@ -179,8 +179,10 @@ function parseHTML () {
                     currentParent.children.push(element);
                 }
         
-                stack.push(element);
-                currentParent = element;
+                if(!startTagMatch.unarySlash) {
+                    stack.push(element);
+                    currentParent = element;
+                }
                 continue;
             }
         } else {
