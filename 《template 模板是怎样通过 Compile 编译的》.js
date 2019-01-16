@@ -22,6 +22,8 @@ const defaultTagRE = /\{\{((?:.|\n)+?)\}\}/g
 
 const forAliasRE = /(.*?)\s+(?:in|of)\s+(.*)/
 
+const stripBracket = /^\(|\)$/g;
+
 const stack = [];
 let currentParent, root;
 
@@ -128,7 +130,7 @@ function processFor (el) {
     if ((exp = getAndRemoveAttr(el, 'v-for'))) {
         const inMatch = exp.match(forAliasRE);
         el.for = inMatch[2].trim();
-        el.alias = inMatch[1].trim();
+        el.alias = inMatch[1].trim().replace(stripBracket, '').trim();
     }
 }
 
@@ -292,7 +294,7 @@ function generate (rootAst) {
         const children = el.children;
 
         if (children && children.length > 0) {
-            return `${children.map(genNode).join(',')}`;
+            return `[${children.map(genNode).join(',')}]`;
         }
     }
 
@@ -304,9 +306,9 @@ function generate (rootAst) {
         } else {
             const children = genChildren(el);
             let code;
-            code = `_c('${el.tag},'{
+            code = `_c('${el.tag}',{
                 staticClass: ${el.attrsMap && el.attrsMap[':class']},
-                class: ${el.attrsMap && el.attrsMap['class']},
+                'class': ${el.attrsMap && el.attrsMap['class']},
             }${
                 children ? `,${children}` : ''
             })`
